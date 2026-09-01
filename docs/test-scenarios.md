@@ -1,7 +1,7 @@
 # EventHub — Booking Management Test Scenarios
 
-Generated: 2026-03-06
-Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
+Generated: 2026-08-21
+Scope: Booking Management (view, create, cancel, clear-all, refund eligibility, admin booking management)
 
 ---
 
@@ -14,7 +14,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Steps**:
 1. Navigate to `/bookings`
 2. Observe the list of booking cards rendered
-**Expected Results**: Each booking card displays booking reference, event name, quantity, total price, and "View Details" link
+**Expected Results**: Each booking card displays booking reference, status badge, booking ID, event name, date, quantity, city, total price, and "View Details" / "Cancel Booking" actions
 **Business Rule**: Flow 4 — Manage Bookings
 **Suggested Layer**: E2E
 
@@ -28,7 +28,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Navigate to `/bookings`
 2. Click "View Details" on any booking card
 3. Observe the booking detail page at `/bookings/:id`
-**Expected Results**: Page shows event details (title, date, venue, city, category), customer details (name, email, phone), payment summary (quantity, price per ticket, total paid), booking reference in breadcrumb and header, booking ID, and "Check eligibility for refund?" link
+**Expected Results**: Page shows event details (title, category, date, venue, city), customer details (name, email, phone), payment summary (tickets, price per ticket, total paid), booking reference in breadcrumb and header, booking ID, "Booked on" date, and "Check eligibility for refund?" link
 **Business Rule**: Booking model fields; Flow 4
 **Suggested Layer**: E2E
 
@@ -44,7 +44,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 3. Confirm in the dialog by clicking "Yes, cancel it"
 4. Observe redirect and bookings list
 **Expected Results**: Success toast "Booking cancelled successfully" appears; user is redirected to `/bookings`; cancelled booking no longer appears in the list
-**Business Rule**: Booking cancellation deletes the record; seats released for dynamic events
+**Business Rule**: Booking cancellation permanently deletes the record (hard delete, not a status change); seats released for dynamic events
 **Suggested Layer**: E2E
 
 ---
@@ -56,11 +56,12 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Steps**:
 1. Navigate to `/bookings`
 2. Click "Clear all bookings" link
-3. Confirm the browser confirm dialog
+3. Confirm the browser `confirm()` dialog
 4. Observe the page after clearing
-**Expected Results**: All bookings are removed; page shows empty state "No bookings yet" with "Browse Events" button
-**Business Rule**: `DELETE /api/bookings` clears all user bookings; `clearAllBookings` service method
+**Expected Results**: All bookings are removed; page shows empty state "No bookings yet" with "Browse Events" button; `DELETE /api/bookings` is called with the user's JWT and returns `{ deleted: N }`
+**Business Rule**: `DELETE /api/bookings` clears all bookings for the authenticated user; `clearAllBookings` service method
 **Suggested Layer**: E2E
+**Note**: See TC-311 — the current frontend wiring for this button has a known defect that can make this scenario fail; keep this test as the source of truth for intended behavior.
 
 ---
 
@@ -101,6 +102,32 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 
 ---
 
+### TC-008: Admin — view all own bookings in "Manage Bookings" table
+**Category**: Happy Path
+**Priority**: P1
+**Preconditions**: User is logged in; user has at least one booking
+**Steps**:
+1. Navigate to `/admin/bookings`
+2. Observe the bookings table
+**Expected Results**: Table renders columns Ref, Customer, Event, Qty, Total, Status, Date, Actions; header shows total booking count; rows match the user's own bookings
+**Business Rule**: `AdminBookingsPage` renders `useBookings` results in a table view
+**Suggested Layer**: E2E
+
+---
+
+### TC-009: Admin — view booking detail via "View" modal
+**Category**: Happy Path
+**Priority**: P2
+**Preconditions**: User is on `/admin/bookings` with at least one booking row
+**Steps**:
+1. Click "View" on any row
+2. Observe the modal
+**Expected Results**: `BookingModal` opens showing reference, status, event (title/date/city), customer (name/email/phone), tickets, total, and booked-on date; closing the modal returns to the table
+**Business Rule**: `BookingModal` component in `AdminBookingsPage`
+**Suggested Layer**: Component / E2E
+
+---
+
 ## Business Rules
 
 ### TC-100: FIFO pruning — 10th booking replaces oldest booking from a different event
@@ -112,7 +139,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 2. Create a new booking (10th) for a different event via `POST /api/bookings`
 3. Retrieve all user bookings
 **Expected Results**: Total booking count remains 9; the oldest booking is deleted; the new booking is present
-**Business Rule**: Max 9 bookings per user; FIFO pruning prefers deleting from a different event
+**Business Rule**: Max 9 bookings per user; FIFO pruning prefers deleting from a different event (`findOldestUserBookingExcludingEvent`)
 **Suggested Layer**: API
 
 ---
@@ -124,7 +151,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Steps**:
 1. Create a 10th booking for the same event
 2. Retrieve the event's available seats
-**Expected Results**: Oldest booking is deleted; new booking is created; `availableSeats` decremented by the new booking's quantity (seat permanently burned via `decrementSeats`)
+**Expected Results**: Oldest booking is deleted; new booking is created; `availableSeats` is decremented by the new booking's quantity (seat permanently burned via `eventRepository.decrementSeats`)
 **Business Rule**: `sameEventFallback` path in `bookingService.createBooking`
 **Suggested Layer**: API
 
@@ -137,8 +164,8 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Steps**:
 1. Book the event
 2. Read the `bookingRef` from the confirmation card or API response
-**Expected Results**: `bookingRef` starts with the uppercase first character of the event title (e.g., "T-XXXXXX" for "Tech Conference")
-**Business Rule**: `randomRef` function: prefix = `eventTitle[0].toUpperCase()`; Rule 7
+**Expected Results**: `bookingRef` starts with the uppercase first character of the event title, followed by `-` and 6 random alphanumeric characters (e.g., "T-A3B2C1")
+**Business Rule**: `randomRef` function: prefix = `eventTitle[0].toUpperCase()`
 **Suggested Layer**: E2E / API
 
 ---
@@ -152,8 +179,8 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 2. Click "Check eligibility for refund?"
 3. Wait for spinner to disappear (4 seconds)
 4. Read the refund result
-**Expected Results**: `#refund-result` shows green "Eligible for refund. Single-ticket bookings qualify for a full refund."
-**Business Rule**: Rule 8 — quantity === 1 → eligible
+**Expected Results**: `[data-testid=refund-result]` shows green "Eligible for refund. Single-ticket bookings qualify for a full refund."
+**Business Rule**: quantity === 1 → eligible (frontend-only logic, no backend endpoint)
 **Suggested Layer**: E2E
 
 ---
@@ -167,8 +194,8 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 2. Click "Check eligibility for refund?"
 3. Wait for spinner to disappear (4 seconds)
 4. Read the refund result
-**Expected Results**: `#refund-result` shows red "Not eligible for refund. Group bookings (3 tickets) are non-refundable." with correct quantity displayed
-**Business Rule**: Rule 8 — quantity > 1 → not eligible
+**Expected Results**: `[data-testid=refund-result]` shows red "Not eligible for refund. Group bookings (3 tickets) are non-refundable." with correct quantity displayed
+**Business Rule**: quantity > 1 → not eligible
 **Suggested Layer**: E2E
 
 ---
@@ -181,8 +208,8 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Click "Check eligibility for refund?"
 2. Immediately check for spinner
 3. Observe when spinner disappears and result appears
-**Expected Results**: `#refund-spinner` is visible immediately after clicking; spinner disappears and `#refund-result` appears after ~4 seconds
-**Business Rule**: Rule 8 — `setTimeout(..., 4000)` in `RefundEligibility` component
+**Expected Results**: `[data-testid=refund-spinner]` is visible immediately after clicking; spinner disappears and `[data-testid=refund-result]` appears after ~4 seconds (`setTimeout(..., 4000)`)
+**Business Rule**: `RefundEligibility` component timing
 **Suggested Layer**: E2E / Component
 
 ---
@@ -195,19 +222,19 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Book an event (e.g., price $1499, quantity 3)
 2. View the booking detail page
 **Expected Results**: "Total Paid" shows $4,497 (1499 × 3); `totalPrice` in API response equals `event.price × quantity`
-**Business Rule**: Rule 9 — `totalPrice = event.price × quantity`
+**Business Rule**: `totalPrice = event.price × quantity`
 **Suggested Layer**: E2E / API
 
 ---
 
-### TC-107: Bookings page shows max 10 bookings per page (pagination)
+### TC-107: Bookings API defaults to 10 items per page
 **Category**: Business Rule
 **Priority**: P1
-**Preconditions**: User has more than 10 bookings visible in DB (unlikely with limit 9, but relevant for API pagination param)
+**Preconditions**: User is authenticated
 **Steps**:
-1. Send `GET /api/bookings?page=1&limit=10`
-**Expected Results**: Response includes `pagination.limit = 10`, `pagination.totalPages`, and `data` array with at most 10 items
-**Business Rule**: Rule 4 — max 9 bookings per user; API default limit = 10
+1. Send `GET /api/bookings` with no `page`/`limit` query params
+**Expected Results**: Response includes `pagination.page = 1`, `pagination.limit = 10`, and `data` array with at most 10 items
+**Business Rule**: `bookingService.getBookings` — `Number(filters.limit) || 10`
 **Suggested Layer**: API
 
 ---
@@ -217,25 +244,62 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Priority**: P1
 **Preconditions**: User has a dynamic (user-created) event with a booking
 **Steps**:
-1. Note the current available seats for the event (computed: totalSeats - booked quantities)
+1. Note the current available seats for the event (computed: `totalSeats - sum(user's booking quantities)`)
 2. Cancel the booking for that event
 3. Re-fetch the event detail
 **Expected Results**: Available seats increase by the cancelled booking's quantity
-**Business Rule**: Rule 6 — dynamic events compute seats as `totalSeats - sum(user's booking quantities)`; cancellation removes the booking record
+**Business Rule**: Dynamic events compute seats on read; cancellation removes the booking record, so the sum used in the computation drops
 **Suggested Layer**: API / E2E
 
 ---
 
-### TC-109: Bookings list shows "Clear all bookings" button whenever bookings exist
+### TC-109: "Clear all bookings" link is visible whenever bookings exist
 **Category**: Business Rule
 **Priority**: P2
 **Preconditions**: User has at least one booking
 **Steps**:
 1. Navigate to `/bookings`
 2. Look for "Clear all bookings" link
-**Expected Results**: "Clear all bookings" link is visible in the top-right of the page header
+**Expected Results**: "Clear all bookings" link is visible in the top-right of the page header, with helper text "Do this often for clean test data."
 **Business Rule**: Flow 4 — UI always shows clear option when bookings exist
 **Suggested Layer**: E2E / Component
+
+---
+
+### TC-110: Ticket stepper is capped at the lower of 10 or the event's available seats
+**Category**: Business Rule
+**Priority**: P1
+**Preconditions**: An event has fewer than 10 seats remaining (e.g., 3 available)
+**Steps**:
+1. Navigate to the event's detail page
+2. Click "+" repeatedly on the ticket stepper
+**Expected Results**: Stepper stops incrementing at 3 (not 10); "+" button becomes disabled; helper text reads "(max 3)"
+**Business Rule**: `maxQty = Math.min(10, event.availableSeats)` in `BookingForm`
+**Suggested Layer**: E2E / Component
+
+---
+
+### TC-111: Admin bookings "Cancelled" status filter never returns results
+**Category**: Business Rule
+**Priority**: P2
+**Preconditions**: User is on `/admin/bookings`; user has cancelled at least one booking previously
+**Steps**:
+1. Select "Cancelled" from the status filter dropdown
+**Expected Results**: List is empty — because cancellation hard-deletes the booking row rather than setting `status = "cancelled"`, no booking can ever match this filter
+**Business Rule**: `bookingService.cancelBooking` calls `bookingRepository.delete`, never updates `status`; `status` is always `"confirmed"` at creation and stays that way until the row is deleted
+**Suggested Layer**: API / E2E
+
+---
+
+### TC-112: Client-supplied `status` field is ignored on booking creation
+**Category**: Business Rule
+**Priority**: P2
+**Preconditions**: User is authenticated
+**Steps**:
+1. Send `POST /api/bookings` with a valid payload plus an extra `status: "cancelled"` field
+**Expected Results**: Booking is created with `status: "confirmed"` regardless of the supplied value
+**Business Rule**: `bookingService.createBooking` hardcodes `status: 'confirmed'`; the validator does not accept a `status` field at all
+**Suggested Layer**: API
 
 ---
 
@@ -251,7 +315,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 3. Log in as User B
 4. Navigate to `/bookings/:userA_booking_id`
 **Expected Results**: Page shows "Access Denied" title and "You are not authorized to view this booking." description
-**Business Rule**: Rule 2 — cross-user access returns 403; frontend renders "Access Denied" on 403 response
+**Business Rule**: Cross-user access returns 403; frontend renders "Access Denied" on 403 response
 **Suggested Layer**: E2E
 
 ---
@@ -328,6 +392,20 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 
 ---
 
+### TC-207: "Manage Bookings" admin page is not a true cross-user admin view
+**Category**: Security
+**Priority**: P1
+**Preconditions**: Two test accounts exist; both have bookings
+**Steps**:
+1. Log in as User A and note their booking count on `/admin/bookings`
+2. Log in as User B, who has a different set of bookings
+3. Navigate to `/admin/bookings`
+**Expected Results**: Each user only ever sees their own bookings on `/admin/bookings` — the endpoint it calls (`GET /api/bookings`) is scoped to `req.user.userId` server-side with no admin-role bypass, despite the page being named "Manage Bookings"
+**Business Rule**: `bookingRepository.findAll` always filters `where: { userId }`; there is no admin role or privilege escalation path
+**Suggested Layer**: API / E2E
+
+---
+
 ## Negative / Error
 
 ### TC-300: Navigate to non-existent booking ID shows "Booking not found"
@@ -385,7 +463,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Steps**:
 1. Send `POST /api/bookings` with missing `customerName`, `customerEmail`, or `customerPhone`
 **Expected Results**: HTTP 400; validation error message listing missing fields
-**Business Rule**: Input validators on the bookings route
+**Business Rule**: `validateCreateBooking` validators on the bookings route
 **Suggested Layer**: API
 
 ---
@@ -398,7 +476,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Send `POST /api/bookings` with `quantity: 0`
 2. Send `POST /api/bookings` with `quantity: -1`
 **Expected Results**: HTTP 400; validation error for both cases
-**Business Rule**: quantity must be 1–10 per booking model
+**Business Rule**: quantity must be an integer between 1 and 10
 **Suggested Layer**: API
 
 ---
@@ -440,6 +518,154 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 
 ---
 
+### TC-400: Booking quantity exactly 10 succeeds when seats allow it
+**Category**: Edge Case
+**Priority**: P1
+**Preconditions**: User is authenticated and an event has at least 10 seats remaining
+**Steps**:
+1. Navigate to the event detail page
+2. Increase quantity to 10
+3. Complete booking with valid customer details
+**Expected Results**: Booking is created successfully with `quantity = 10` and total price reflects ten tickets; page shows confirmation and booking appears in `/bookings`
+**Business Rule**: Quantity must be between 1 and 10; current event seat availability must still be at least 10 for the user to purchase the full max
+**Suggested Layer**: E2E
+
+---
+
+### TC-401: Same user may book the same dynamic event more than once
+**Category**: Edge Case
+**Priority**: P1
+**Preconditions**: User owns a dynamic event and has enough personal seat allowance for repeated bookings
+**Steps**:
+1. Create a dynamic event with `totalSeats = 5`
+2. Book the event once for quantity 2
+3. Book the same event again for quantity 1
+4. Retrieve booking list and event detail
+**Expected Results**: Both bookings exist in the user's list; the event's computed available seats reflect the personal booking total rather than treating bookings as a single shared seat pool across all users
+**Business Rule**: Dynamic events compute `availableSeats = totalSeats - sum(user booking quantities for that event)`; same-user repeat bookings are valid
+**Suggested Layer**: API / E2E
+
+---
+
+### TC-402: Booking list pagination respects the 10-item default and next page
+**Category**: Edge Case
+**Priority**: P2
+**Preconditions**: User has more than 10 bookings
+**Steps**:
+1. Navigate to `/bookings`
+2. Observe the first page of booking cards
+3. Move to the next page if pagination controls are present
+**Expected Results**: No more than 10 bookings are shown on the first page; pagination changes page state without duplicating or dropping entries across pages
+**Business Rule**: `GET /api/bookings` defaults to `limit = 10`; the list pages in chunks of 10
+**Suggested Layer**: E2E / API
+
+---
+
+### TC-500: Empty bookings state is shown when the user has no bookings
+**Category**: UI State
+**Priority**: P0
+**Preconditions**: User is logged in and has cleared all bookings
+**Steps**:
+1. Navigate to `/bookings`
+**Expected Results**: Empty-state message is displayed with a call to action such as "Browse Events" or similar; no booking cards appear; the clear-all action is hidden
+**Business Rule**: Empty state for no-bookings flow; list should not crash when there are zero records
+**Suggested Layer**: E2E
+
+---
+
+### TC-501: Loading state appears while bookings data is being fetched
+**Category**: UI State
+**Priority**: P1
+**Preconditions**: User is logged in; network response is intentionally delayed
+**Steps**:
+1. Navigate to `/bookings`
+2. Observe the page before the server responds
+**Expected Results**: A loading or skeleton state is visible; no stale content is shown until data resolves; the component does not render an empty or broken list prematurely
+**Business Rule**: UI should handle asynchronous fetches gracefully while waiting for backend data
+**Suggested Layer**: Component / E2E
+
+---
+
+### TC-502: Cancel confirmation and success toast state on a booking card
+**Category**: UI State
+**Priority**: P1
+**Preconditions**: User has at least one booking
+**Steps**:
+1. Navigate to `/bookings`
+2. Click "Cancel Booking" on a booking card
+3. Confirm the action
+**Expected Results**: Confirm dialog appears; after confirmation, a success toast or inline notification shows that the booking was cancelled, and the card disappears from the list
+**Business Rule**: Booking deletion is immediate and the UI must reflect the result without leaving stale state behind
+**Suggested Layer**: E2E
+
+---
+
+### TC-503: Refund check resets and re-renders correctly for a second booking
+**Category**: UI State
+**Priority**: P2
+**Preconditions**: User has two bookings with different quantities, both accessible from `/bookings/:id`
+**Steps**:
+1. Open a single-ticket booking detail page
+2. Click "Check eligibility for refund?"
+3. Wait for the result to appear
+4. Navigate to a multi-ticket booking detail page and repeat the check
+**Expected Results**: The result text updates to the correct message for each booking; a stale single-ticket result does not remain visible on the next booking detail page
+**Business Rule**: Eligibility is computed on the client from the booking quantity; UI must not reuse stale refund results across pages
+**Suggested Layer**: E2E / Component
+
+---
+
+### TC-504: Booking detail page shows access-denied state for cross-user URL access
+**Category**: UI State
+**Priority**: P0
+**Preconditions**: User A has a booking; User B is logged in and attempts to view it
+**Steps**:
+1. Log in as User B
+2. Navigate directly to User A's booking URL
+**Expected Results**: UI renders the access-denied empty state with an explanatory message and a way to return to the user's own bookings list; no booking data is visible
+**Business Rule**: Access Denied is shown when a 403 response is returned for an unauthorized booking lookup
+**Suggested Layer**: E2E
+
+---
+
+### TC-309: Customer phone with invalid characters is rejected
+**Category**: Negative
+**Priority**: P1
+**Preconditions**: User is authenticated
+**Steps**:
+1. Send `POST /api/bookings` with `customerPhone: "call-me-maybe"` (letters instead of digits)
+**Expected Results**: HTTP 400; validation error "Customer phone must contain only digits and +, -, spaces, or parentheses"
+**Business Rule**: `customerPhone` regex `/^[0-9+\-\s()]+$/` in `validateCreateBooking`
+**Suggested Layer**: API
+
+---
+
+### TC-310: Customer email with invalid format is rejected
+**Category**: Negative
+**Priority**: P1
+**Preconditions**: User is authenticated
+**Steps**:
+1. Send `POST /api/bookings` with `customerEmail: "not-an-email"`
+**Expected Results**: HTTP 400; validation error "Customer email must be a valid email address"
+**Business Rule**: `customerEmail` `.isEmail()` validator
+**Suggested Layer**: API
+
+---
+
+### TC-311: "Clear all bookings" button fails silently (missing auth header on this code path)
+**Category**: Negative
+**Priority**: P0
+**Preconditions**: User is logged in on `/bookings` with at least one booking; browser console/network tab is observable
+**Steps**:
+1. Click "Clear all bookings" and confirm the dialog
+2. Observe the network request, button state, and booking list afterward
+**Expected Results (as currently implemented — flag as a bug if confirmed)**: The outgoing `DELETE` request carries no `Authorization` header, so the backend returns 401; the button briefly shows "Clearing…" then reverts; no success or error toast is shown; the booking list is unchanged; the browser console shows an unhandled promise rejection
+**Business Rule**: `frontend/app/bookings/page.tsx` imports `bookingsApi` from `@/lib/api/bookings` (the `fetch`-based `client.ts`, which never attaches the JWT from `localStorage`), while every other booking mutation (`useCreateBooking`, `useCancelBooking`, `useBookings`) goes through `@/lib/api/bookingsApi` (the axios-based `client.js`, which does attach it) — see CLAUDE.md's note on duplicate `.js`/`.ts` API modules
+**Suggested Layer**: E2E / API
+**Note**: This scenario exists to catch/confirm a discrepancy between the two API client modules found while reading the code; verify against the live site since behavior may have been fixed since this was written.
+
+---
+
 ## Edge Cases
 
 ### TC-400: Exactly 9 bookings — adding a 10th prunes oldest from a DIFFERENT event (preferred)
@@ -477,7 +703,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Navigate to event detail page
 2. Leave quantity at 1 (default minimum)
 3. Fill customer form and confirm booking
-**Expected Results**: Booking created with `quantity: 1`; `totalPrice = price × 1`; booking ref generated
+**Expected Results**: Booking created with `quantity: 1`; `totalPrice = price × 1`; booking ref generated; decrement button disabled at 1
 **Business Rule**: quantity boundary: 1 is minimum
 **Suggested Layer**: E2E
 
@@ -491,7 +717,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 1. Navigate to event detail; click "+" 9 times to reach quantity 10
 2. Fill form and confirm booking
 **Expected Results**: Booking created with `quantity: 10`; `totalPrice = price × 10`; increment button disabled at 10
-**Business Rule**: quantity boundary: 10 is maximum; UI should prevent going above 10
+**Business Rule**: quantity boundary: 10 is maximum; UI prevents going above `min(10, availableSeats)`
 **Suggested Layer**: E2E
 
 ---
@@ -505,7 +731,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 2. Click "Check eligibility for refund?"
 3. Wait 4 seconds
 **Expected Results**: Result shows "Not eligible for refund. Group bookings (2 tickets) are non-refundable."
-**Business Rule**: Rule 8 — threshold is quantity === 1; quantity = 2 is the first ineligible value
+**Business Rule**: Threshold is quantity === 1; quantity = 2 is the first ineligible value
 **Suggested Layer**: E2E
 
 ---
@@ -539,7 +765,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 ### TC-407: Pagination on bookings list (API) — page 2 with partial results
 **Category**: Edge Case
 **Priority**: P2
-**Preconditions**: User has more than the default page limit of bookings visible in API
+**Preconditions**: User has more bookings than the requested page size
 **Steps**:
 1. Send `GET /api/bookings?page=2&limit=5`
 **Expected Results**: Returns page 2 results; `pagination.page = 2`; `data` array contains at most 5 items
@@ -558,6 +784,43 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 **Expected Results**: `bookingRef` starts with "1-XXXXXX" (digit is used as-is, `toUpperCase()` has no effect on digits)
 **Business Rule**: `randomRef` — `prefix = (eventTitle?.[0] ?? 'E').toUpperCase()`
 **Suggested Layer**: API / Unit
+
+---
+
+### TC-409: Ticket stepper collapses to a lower max when seats are scarce
+**Category**: Edge Case
+**Priority**: P2
+**Preconditions**: An event has exactly 1 available seat
+**Steps**:
+1. Navigate to the event detail page
+2. Observe the ticket stepper
+**Expected Results**: Quantity starts and stays at 1; both "+" (max reached) is disabled; helper text reads "(max 1)"
+**Business Rule**: `maxQty = Math.min(10, event.availableSeats)`
+**Suggested Layer**: E2E / Component
+
+---
+
+### TC-410: Sold-out event disables booking entirely
+**Category**: Edge Case
+**Priority**: P1
+**Preconditions**: An event has `availableSeats === 0`
+**Steps**:
+1. Navigate to the event detail page
+**Expected Results**: "Available" meta shows "SOLD OUT" in red; submit button reads "Sold Out" and is disabled; form cannot be submitted
+**Business Rule**: `soldOut = event.availableSeats === 0`; `maxQty = Math.min(10, 0) = 0`
+**Suggested Layer**: E2E / Component
+
+---
+
+### TC-411: Booking exactly the last remaining seat succeeds (boundary, not off-by-one)
+**Category**: Edge Case
+**Priority**: P1
+**Preconditions**: Event has exactly N personal seats available for the current user
+**Steps**:
+1. Send `POST /api/bookings` with `quantity: N` (exactly equal to remaining seats)
+**Expected Results**: HTTP 201; booking succeeds (only `personalAvailable < quantity` fails, so equality is allowed); a subsequent booking of `quantity: 1` for the same event then fails with `InsufficientSeatsError`
+**Business Rule**: `personalAvailable < data.quantity` check in `bookingService.createBooking`
+**Suggested Layer**: API
 
 ---
 
@@ -654,7 +917,7 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 
 ---
 
-### TC-507: "Clear all bookings" button shows "Clearing..." while in progress
+### TC-507: "Clear all bookings" button shows "Clearing…" while in progress
 **Category**: UI State
 **Priority**: P2
 **Preconditions**: User has bookings; network is slow
@@ -703,4 +966,43 @@ Scope: Booking Management (Flow 4 — View, Cancel, Clear, Refund Eligibility)
 2. Observe pagination controls
 **Expected Results**: `Pagination` component renders with correct `currentPage` and `totalPages`; clicking next page updates URL `?page=N` and loads next page of bookings
 **Business Rule**: Pagination in `BookingsContent` driven by `pagination` from API response
+**Suggested Layer**: E2E / Component
+
+---
+
+### TC-511: Admin bookings table shows loading, error, and empty states
+**Category**: UI State
+**Priority**: P2
+**Preconditions**: `/admin/bookings` under varying data/network conditions
+**Steps**:
+1. Load the page while fetching (throttled network) — observe spinner
+2. Simulate a server error — observe "Couldn't load bookings" + Retry
+3. Filter to a status with zero matches (e.g. "Cancelled", see TC-111) — observe "No bookings found"
+**Expected Results**: Each of the three states (`isLoading`, `isError`, empty) renders its own dedicated UI in the table container
+**Business Rule**: `AdminBookingsPage` conditional rendering branches
+**Suggested Layer**: Component / E2E
+
+---
+
+### TC-512: Admin status filter resets pagination to page 1
+**Category**: UI State
+**Priority**: P2
+**Preconditions**: User is on `/admin/bookings` page 2 or later
+**Steps**:
+1. While on page 2+, change the status filter dropdown
+**Expected Results**: Page resets to 1 and the table reloads with the new filter applied
+**Business Rule**: `setStatus` handler also calls `setPage(1)` in `AdminBookingsPage`
+**Suggested Layer**: Component / E2E
+
+---
+
+### TC-513: Admin cancel confirmation dialog matches list-page wording
+**Category**: UI State
+**Priority**: P3
+**Preconditions**: User is on `/admin/bookings` with a confirmed booking row
+**Steps**:
+1. Click "Cancel" on a row
+2. Observe the confirmation dialog
+**Expected Results**: `ConfirmDialog` shows title "Cancel this booking?" and description "This will cancel the booking and restore the seats to the event. This cannot be undone."; confirming cancels the booking and closes the dialog
+**Business Rule**: `AdminBookingsPage` `ConfirmDialog` wiring
 **Suggested Layer**: E2E / Component

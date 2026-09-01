@@ -26,6 +26,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local AI tool permissions
+.claude/settings.local.json
+
 # Playwright test artifacts
 playwright-report/
 test-results/
