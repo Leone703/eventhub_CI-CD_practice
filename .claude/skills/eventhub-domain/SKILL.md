@@ -88,3 +88,8 @@ Load these based on what the current task needs:
 - **API endpoints & error codes** → read `./api-reference.md`
 - **UI selectors for test automation** → read `./ui-selectors.md`
 - **User flows, test scenarios & test data** → read `./user-flows.md`
+
+### Test Accounts details
+| Account    | Email                    | Password    |
+|------------|--------------------------|-------------|
+| Yahoo User | zitechtesting@yahoo.com     | Serenity01' |

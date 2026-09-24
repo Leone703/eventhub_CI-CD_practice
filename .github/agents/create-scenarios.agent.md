@@ -1,5 +1,5 @@
 ---
-name: create-scenarios
+name: create-scenarios.agent.md
 description: Generate functional test scenarios from domain knowledge using 6 thinking lenses
 argument-hint: "feature-name or blank for full suite"
 # tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo'] # specify the tools this agent can use. If not set, all enabled tools are allowed.
@@ -35,7 +35,7 @@ For every feature/flow in the domain skill, apply ALL 6 lenses:
 | UI State | Are there conditional displays, loading states, empty states? |
 
 ## Output Format
-Write to **`docs/test-scenarios.md`** (consumed by `/test-strategy` skill). Use this template:
+Write to **`docs/copilot/test-scenarios.md`** (consumed by `/test-strategy.agent.md` skill). Use this template:
 
 ```
 ### TC-<NNN>: <Title>

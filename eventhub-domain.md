@@ -300,11 +300,10 @@ Run `npm run seed` to insert:
 - Photography Workshop (Workshop, 50 seats, $399)
 - Food Festival Bangalore (Festival, 2000 seats, $149)
 
-### Test Accounts
+### Test Accounts details
 | Account    | Email                    | Password    |
 |------------|--------------------------|-------------|
-| Gmail User | rahulshetty1@gmail.com   | Magiclife1! |
-| Yahoo User | rahulshetty1@yahoo.com   | Magiclife1! |
+| Yahoo User | zitechtesting@yahoo.com     | Serenity01' |
 
 
 
