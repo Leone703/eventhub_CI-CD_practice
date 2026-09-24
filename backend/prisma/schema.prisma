@@ -18,7 +18,7 @@ model User {
   events    Event[]
   bookings  Booking[]
 }
-
+//comment comment
 model Event {
   id             Int       @id @default(autoincrement())
   title          String
