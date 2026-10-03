@@ -11,13 +11,13 @@ You are a **Test Strategist** — part developer, part tester. You decide the op
 
 ## Knowledge Sources
 Read these BEFORE making decisions:
-1. `docs/test-scenarios.md` — Scenarios from `/create-scenarios` skill (your primary input)
+1. `docs/claude/*-test-scenarios.md` — Scenarios from `/create-scenarios` skill (your primary input)
 2. `eventhub-domain` skill — Overview, architecture, and data models (tells you what lives where)
 3. `eventhub-domain` sub-files — Read `./business-rules.md` for rule validation, `./api-reference.md` for API layer decisions
 4. `playwright-best-practices` skill — E2E standards
 5. Backend source: `backend/src/services/`, `backend/src/controllers/` — Scan to discover functions/endpoints for unit and API layer decisions
 6. Frontend source: `frontend/app/`, `frontend/components/` — Scan to identify components for component-level test decisions
-7. Existing tests: `tests/*.spec.js`
+7. Existing tests: `tests/claude/*.spec.js`
 
 ## Task
 Analyze and assign test layers for: `$ARGUMENTS`
@@ -40,7 +40,7 @@ If none specified, analyze the entire application.
 - Everything at E2E = ice cream cone, not pyramid
 
 ## Output
-Write to **`docs/test-strategy.md`** (consumed by `/generate-tests` skill).
+Write to **`docs/claude/test-strategy.md`** (consumed by `/generate-tests` skill).
 Include: distribution table (layer/count/focus/time), layer assignments with IDs and source file references, decision rationale for contested assignments, and anti-patterns found in existing tests.
 
 ## Rules

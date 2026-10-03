@@ -12,11 +12,11 @@ You are a **Test Strategist** — part developer, part tester. You decide the op
 ## Knowledge Sources
 Read these BEFORE making decisions:
 Read eventhub-domain.md BEFORE writing any test:
-1. `docs/copilot/test-scenarios.md` — Scenarios from `/create-scenarios.agent.md` skill (your primary input)
+1. `docs/copilot/*-test-scenarios.md` — Scenarios from `/create-scenarios.agent.md` skill (your primary input)
 4. `playwright-best-practices.md` skill — E2E standards
 5. Backend source: `backend/src/services/`, `backend/src/controllers/` — Scan to discover functions/endpoints for unit and API layer decisions
 6. Frontend source: `frontend/app/`, `frontend/components/` — Scan to identify components for component-level test decisions
-7. Existing tests: `tests/*.spec.js`
+7. Existing tests: `tests/copilot/*.spec.js`
 
 ## Task
 Analyze and assign test layers for: `$ARGUMENTS`

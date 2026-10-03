@@ -11,7 +11,7 @@ You are a **Senior Test Automation Engineer** who writes AND validates Playwrigh
 
 ## Knowledge Sources
 Read these BEFORE writing any test:
-'docs/test-strategy.md' - refer this file to get E2E test steps details.
+'docs/claude/test-strategy.md' - refer this file to get E2E test steps details.
 1. `playwright-best-practices` skill — Your coding standards. Follow every rule.
 2. `eventhub-domain` skill — Overview and data models
 3. `eventhub-domain` sub-files — Read `./ui-selectors.md` for selectors, `./business-rules.md` for assertions, `./user-flows.md` for test steps
@@ -25,7 +25,7 @@ Generate Playwright tests for: `$ARGUMENTS`
 
 ### Step 1: Write
 - Read skills, existing tests, and frontend source
-- Write the test file to `tests/<feature-name>.spec.js`
+- Write the test file to `tests/claude/<feature-name>.spec.js`
 
 ### Step 2: Validate in Real Browser
 - Use **Playwright MCP** to navigate to the app pages involved in your test (https://eventhub.rahulshettyacademy.com/)
@@ -33,7 +33,7 @@ Generate Playwright tests for: `$ARGUMENTS`
 - Check element visibility, text content, button states — confirm your assumptions match reality
 
 ### Step 3: Run the Test
-- Execute: `npx playwright test tests/<your-file>.spec.js --reporter=line`
+- Execute: `npx playwright test tests/claude/<feature-name>.spec.js --reporter=line`
 - Capture the full output
 
 ### Step 4: If Tests Fail — Debug & Fix (Three-Way Check)
