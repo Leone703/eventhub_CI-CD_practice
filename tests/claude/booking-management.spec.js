@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
 const BASE_URL      = 'https://eventhub.rahulshettyacademy.com';
-const USER_EMAIL    = 'rahulshetty1@gmail.com';
 const USER_PASSWORD = 'Magiclife1!';
 
 // Customer details reused for every booking created in this suite
@@ -13,12 +13,13 @@ const CUSTOMER = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-async function login(page) {
-  await page.goto(`${BASE_URL}/login`);
-  await page.getByPlaceholder('you@email.com').fill(USER_EMAIL);
-  await page.getByLabel('Password').fill(USER_PASSWORD);
-  await page.locator('#login-btn').click();
-  // Successful login redirects away from /login to the home page
+async function registerIsolatedUser(page) {
+  const email = `booking-e2e-${randomUUID()}@example.com`;
+  await page.goto(`${BASE_URL}/register`);
+  await page.getByTestId('register-email').fill(email);
+  await page.getByTestId('register-password').fill(USER_PASSWORD);
+  await page.getByPlaceholder('Repeat your password').fill(USER_PASSWORD);
+  await page.getByTestId('register-btn').click();
   await expect(page).toHaveURL(/rahulshettyacademy\.com\/?$/);
   await expect(page.getByRole('link', { name: /Browse Events/i }).first()).toBeVisible();
 }
@@ -59,34 +60,13 @@ async function bookEvent(page) {
   return { bookingRef, eventTitle };
 }
 
-/**
- * Clears all bookings. Safe to call when already empty.
- */
-async function clearBookings(page) {
-  await page.goto(`${BASE_URL}/bookings`);
-
-  const clearBtn = page.getByRole('button', { name: /clear all bookings/i });
-  await expect(clearBtn).toBeVisible();
-
-  // Wait for the list to settle into one of its two terminal states
-  await expect(
-    page.getByText('No bookings yet').or(page.getByTestId('booking-card').first()),
-  ).toBeVisible();
-  if (await page.getByText('No bookings yet').isVisible()) return;
-
-  page.once('dialog', (dialog) => dialog.accept());
-  await clearBtn.click();
-  await expect(page.getByText('No bookings yet')).toBeVisible();
-}
-
 // ── Test Suite ─────────────────────────────────────────────────────────────────
 
 test.describe('Booking Management — Critical Happy Paths', () => {
 
-  // Every test starts logged in with a clean bookings list
+  // Each test gets a fresh sandbox instead of deleting shared-account data.
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await clearBookings(page);
+    await registerIsolatedUser(page);
   });
 
   // TC-001 ───────────────────────────────────────────────────────────────────
@@ -133,7 +113,10 @@ test.describe('Booking Management — Critical Happy Paths', () => {
     await expect(page.getByText('Payment Summary')).toBeVisible();
     await expect(page.getByText('Total Paid')).toBeVisible();
 
-    // -- Step 7: Verify refund eligibility check button is present --
+    // -- Step 7: Verify booking information section --
+    await expect(page.getByText('Booking Information')).toBeVisible();
+
+    // -- Step 8: Verify refund eligibility check button is present --
     await expect(page.locator('#check-refund-btn')).toBeVisible();
   });
 

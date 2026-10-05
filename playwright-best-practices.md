@@ -24,7 +24,7 @@ This document defines the testing standards, patterns, and best practices for wr
 - **Video**: Retain on failure
 
 ### File Naming Convention
-- Test files: `tests/<feature-name>.spec.js`
+- Test files: `tests/copilot/<feature-name>.spec.js`
 - Use descriptive kebab-case names: `booking-flow.spec.js`, `cross-user-booking.spec.js`
 - Group related tests in the same file using `test.describe()`
 
@@ -145,8 +145,8 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = 'http://localhost:3000';
 
 // Credentials as constants at top
-const USER_EMAIL = 'rahulshetty1@gmail.com';
-const USER_PASSWORD = 'Magiclife1!';
+const USER_EMAIL = 'test.automation@yahoo.com';
+const USER_PASSWORD = "Training123'";
 
 // Reusable helpers
 async function login(page) {
@@ -263,8 +263,8 @@ const SIX_EVENTS_RESPONSE = {
 ### Test Users
 | User          | Email                       | Password    | Purpose          |
 |---------------|----------------------------|-------------|------------------|
-| Gmail User    | rahulshetty1@gmail.com     | Magiclife1! | Primary tester   |
-| Yahoo User    | rahulshetty1@yahoo.com     | Magiclife1! | Cross-user tests |
+| Yahoo User    | test.automation@yahoo.com     | Training123 | Primary tester |
+| Gmail User    | test.automation@gmail.com     | Training123 | Cross-user tests |
 
 ---
 

@@ -303,7 +303,7 @@ Run `npm run seed` to insert:
 ### Test Accounts details
 | Account    | Email                    | Password    |
 |------------|--------------------------|-------------|
-| Yahoo User | zitechtesting@yahoo.com     | Serenity01' |
+| Yahoo User | test.automation@yahoo.com     | Training123' |
 
 
 

@@ -19,7 +19,7 @@ Read these BEFORE every review:
 ## Task
 Review test file(s): `$ARGUMENTS`
 
-If none specified, review all `tests/*.spec.js`.
+If none specified, review all `tests/claude/*.spec.js`.
 
 ## Process
 1. Read the best practices skill — it becomes your checklist

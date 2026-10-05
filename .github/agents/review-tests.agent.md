@@ -18,7 +18,7 @@ Read these BEFORE every review:
 ## Task
 Review test file(s): `$ARGUMENTS`
 
-If none specified, review all `tests/*.spec.js`.
+If none specified, review all `tests/copilot/*.spec.js`.
 
 ## Process
 1. Read the best practices.md — it becomes your checklist

@@ -92,4 +92,4 @@ Load these based on what the current task needs:
 ### Test Accounts details
 | Account    | Email                    | Password    |
 |------------|--------------------------|-------------|
-| Yahoo User | zitechtesting@yahoo.com     | Serenity01' |
+| Yahoo User | test.automation@yahoo.com     | Training123' |

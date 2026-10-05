@@ -35,7 +35,7 @@ For every feature/flow in the domain skill, apply ALL 6 lenses:
 | UI State | Are there conditional displays, loading states, empty states? |
 
 ## Output Format
-Write to **`docs/test-scenarios.md`** (consumed by `/test-strategy` skill). Use this template:
+Write to **`docs/claude/<feature-name>-test-scenarios.md`** (consumed by `/test-strategy` skill). Use this template:
 
 ```
 ### TC-<NNN>: <Title>
